@@ -392,25 +392,56 @@
     }
 
 function rankScore(p) {
-  const rawTier = String(p.tier || "").trim();
-  const rawDivision = String(p.division || "").trim();
 
-  let base = 150; // アンランク相当
+  const rawTier = String(p.tier || "")
+    .replace(/\s+/g, "")
+    .toUpperCase();
 
-  if (rawTier.includes("アイアン") || rawTier.toUpperCase().includes("IRON")) base = 0;
-  else if (rawTier.includes("ブロンズ") || rawTier.toUpperCase().includes("BRONZE")) base = 100;
-  else if (rawTier.includes("シルバー") || rawTier.toUpperCase().includes("SILVER")) base = 200;
-  else if (rawTier.includes("ゴールド") || rawTier.toUpperCase().includes("GOLD")) base = 300;
-  else if (rawTier.includes("プラチナ") || rawTier.toUpperCase().includes("PLATINUM")) base = 400;
-  else if (rawTier.includes("エメラルド") || rawTier.toUpperCase().includes("EMERALD")) base = 500;
-  else if (rawTier.includes("ダイヤ") || rawTier.toUpperCase().includes("DIAMOND")) base = 600;
-  else if (rawTier.includes("マスター") || rawTier.toUpperCase().includes("MASTER")) base = 700;
-  else if (rawTier.includes("グランドマスター") || rawTier.toUpperCase().includes("GRANDMASTER")) base = 800;
-  else if (rawTier.includes("チャレンジャー") || rawTier.toUpperCase().includes("CHALLENGER")) base = 900;
-  else if (rawTier.includes("アンランク") || rawTier.toUpperCase().includes("UNRANK")) base = 150;
+  const rawDivision = String(p.division || "")
+    .replace(/[^\d]/g, "");
 
-  const division = parseInt(rawDivision, 10);
-  const divScore = isNaN(division) ? 0 : (5 - division) * 25;
+  let base = 150;
+
+  if (rawTier.includes("IRON") || rawTier.includes("アイアン")) {
+    base = 0;
+  }
+  else if (rawTier.includes("BRONZE") || rawTier.includes("ブロンズ")) {
+    base = 100;
+  }
+  else if (rawTier.includes("SILVER") || rawTier.includes("シルバー")) {
+    base = 200;
+  }
+  else if (rawTier.includes("GOLD") || rawTier.includes("ゴールド")) {
+    base = 300;
+  }
+  else if (rawTier.includes("PLATINUM") || rawTier.includes("プラチナ")) {
+    base = 400;
+  }
+  else if (rawTier.includes("EMERALD") || rawTier.includes("エメラルド")) {
+    base = 500;
+  }
+  else if (rawTier.includes("DIAMOND") || rawTier.includes("ダイヤ")) {
+    base = 600;
+  }
+  else if (rawTier.includes("MASTER") || rawTier.includes("マスター")) {
+    base = 700;
+  }
+  else if (rawTier.includes("GRANDMASTER") || rawTier.includes("グランドマスター")) {
+    base = 800;
+  }
+  else if (rawTier.includes("CHALLENGER") || rawTier.includes("チャレンジャー")) {
+    base = 900;
+  }
+  else if (rawTier.includes("UN") || rawTier.includes("アンランク")) {
+    base = 150;
+  }
+
+  const division = parseInt(rawDivision || "4", 10);
+
+  const divScore =
+    isNaN(division)
+      ? 0
+      : (5 - division) * 25;
 
   return base + divScore;
 }
