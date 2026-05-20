@@ -416,25 +416,22 @@
     }
 
     function decodeUrlPayload() {
-  const params = new URLSearchParams(location.search);
-  const encoded = params.get("players");
-  if (!encoded) return;
-
-  try {
-    let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-
-    const uriEncodedJson = atob(base64);
-    const json = decodeURIComponent(uriEncodedJson);
-
-    const obj = JSON.parse(json);
-    document.getElementById("jsonInput").value = JSON.stringify(obj, null, 2);
-    parsePayload(obj);
-  } catch (e) {
-    document.getElementById("resultArea").innerHTML =
-      `<span class="warn">URLデータの読み込みに失敗しました: ${e.message}</span>`;
-  }
-}
+      const params = new URLSearchParams(location.search);
+      const encoded = params.get("players");
+      if (!encoded) return;
+      try {
+        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) base64 += '=';
+        const binary = atob(base64);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        const json = new TextDecoder("utf-8").decode(bytes);
+        const obj = JSON.parse(json);
+        document.getElementById("jsonInput").value = JSON.stringify(obj, null, 2);
+        parsePayload(obj);
+      } catch (e) {
+        document.getElementById("resultArea").innerHTML = `<span class="warn">URLデータの読み込みに失敗しました: ${e.message}</span>`;
+      }
+    }
 
     function loadFromTextarea() {
       try {
@@ -488,10 +485,7 @@
                 <td><input value="${escapeHtml(p.summonerName)}" onchange="players[${i}].summonerName=this.value"></td>
                 <td>${escapeHtml(p.tier)} ${escapeHtml(p.division)}</td>
                 <td>
-                  <select onchange="players[${i}].preferredRoles=this.value ? [this.value] : []">
-                    ${["", ...LANES].map(r => `<option value="${r}" ${r && (p.preferredRoles || []).includes(r) ? 'selected' : ''}>${r || '未指定'}</option>`).join("")}
-                  </select>
-                  <div class="small">希望: ${escapeHtml(formatRoles(p))}</div>
+                  <div class="roleTags">${escapeHtml(formatRoles(p))}</div>
                 </td>
                 <td>${rankScore(p)}</td>
               </tr>`).join("")}
