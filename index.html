@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoL カスタムチーム分け</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg2: #0b1b2e;
+      --panel: rgba(10, 24, 41, 0.96);
+      --panel2: rgba(15, 35, 58, 0.96);
+      --panel3: #0d2238;
+      --text: #f4e7c5;
+      --muted: #b7a77d;
+      --gold: #c8aa6e;
+      --gold2: #f0d99a;
+      --blue: #1f6feb;
+      --blue2: #0a369d;
+      --red: #b23b3b;
+      --red2: #6e1f2b;
+      --green: #10b981;
+      --border: rgba(200, 170, 110, 0.38);
+      --darkBorder: rgba(120, 94, 44, 0.7);
+      --warn: #f59e0b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(31, 111, 235, 0.22), transparent 32%),
+        radial-gradient(circle at 85% 10%, rgba(200, 170, 110, 0.16), transparent 28%),
+        linear-gradient(135deg, #03070d 0%, var(--bg) 42%, #020617 100%);
+      color: var(--text);
+    }
+
+    header {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 12px;
+    }
+
+    .hero {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(8, 22, 38, .98), rgba(14, 35, 57, .92));
+      box-shadow: 0 18px 45px rgba(0,0,0,.45), inset 0 0 30px rgba(200,170,110,.08);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero:before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(240,217,154,.08), transparent);
+      pointer-events: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: .08em;
+      color: var(--gold2);
+      text-shadow: 0 0 18px rgba(200,170,110,.28);
+    }
+
+    .sub {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 20px;
+      padding: 16px 20px 28px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 14px 35px rgba(0,0,0,.38), inset 0 0 24px rgba(200,170,110,.035);
+    }
+
+    .sectionTitle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--darkBorder);
+      padding-bottom: 8px;
+    }
+
+    .sectionTitle h2 {
+      margin: 0;
+      font-size: 17px;
+      color: var(--gold2);
+      letter-spacing: .04em;
+    }
+
+    .badge {
+      color: #06121f;
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      background: #020b15;
+      color: var(--text);
+      border: 1px solid var(--darkBorder);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: Consolas, monospace;
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(200,170,110,.12);
+    }
+
+    button {
+      border: 1px solid rgba(240, 217, 154, .35);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--gold2);
+      background: linear-gradient(135deg, #102238, #07111f);
+      cursor: pointer;
+      font-weight: 800;
+      letter-spacing: .03em;
+      transition: transform .08s ease, filter .12s ease, border-color .12s ease;
+    }
+
+    button:hover {
+      filter: brightness(1.12);
+      border-color: var(--gold2);
+    }
+
+    button:active { transform: translateY(1px); }
+
+    .primary {
+      background: linear-gradient(135deg, #d7b96f, #8a6a2b);
+      color: #06121f;
+      border-color: #f0d99a;
+    }
+
+    .blueBtn {
+      background: linear-gradient(135deg, #1f6feb, #0a369d);
+      color: white;
+      border-color: #64a3ff;
+    }
+
+    .danger {
+      background: linear-gradient(135deg, #8b2632, #4b1020);
+      color: #ffe4e6;
+      border-color: #f87171;
+    }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .mt { margin-top: 14px; }
+    .small { font-size: 12px; color: var(--muted); line-height: 1.65; }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border-radius: 12px;
+      font-size: 14px;
+      border: 1px solid var(--darkBorder);
+      background: #05101e;
+    }
+
+    th, td {
+      border-bottom: 1px solid rgba(120,94,44,.45);
+      padding: 8px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--gold2);
+      background: linear-gradient(180deg, #102238, #081522);
+      font-weight: 800;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    tr:hover td { background: rgba(200,170,110,.04); }
+
+    input, select {
+      width: 100%;
+      background: #020b15;
+      color: var(--text);
+      border: 1px solid rgba(120,94,44,.7);
+      border-radius: 8px;
+      padding: 7px 8px;
+      outline: none;
+    }
+
+    .teams {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .teamBox {
+      border-radius: 16px;
+      padding: 12px;
+      background: linear-gradient(180deg, #06111f, #020912);
+      border: 1px solid var(--border);
+      min-height: 260px;
+    }
+
+    .teamBlue {
+      border-color: rgba(59, 130, 246, .85);
+      box-shadow: inset 0 0 24px rgba(31,111,235,.08);
+    }
+
+    .teamRed {
+      border-color: rgba(248, 113, 113, .82);
+      box-shadow: inset 0 0 24px rgba(220,38,38,.08);
+    }
+
+    .teamTitle {
+      font-weight: 900;
+      margin-bottom: 10px;
+      letter-spacing: .06em;
+      border-bottom: 1px solid rgba(200,170,110,.3);
+      padding-bottom: 8px;
+    }
+
+    .laneLine {
+      display: grid;
+      grid-template-columns: 62px 1fr auto;
+      gap: 8px;
+      padding: 9px 0;
+      border-bottom: 1px dashed rgba(120,94,44,.55);
+    }
+
+    .laneLine:last-child { border-bottom: 0; }
+
+    .lane {
+      color: var(--gold2);
+      font-weight: 900;
+      letter-spacing: .06em;
+    }
+
+    .score {
+      background: #030b14;
+      border: 1px solid var(--darkBorder);
+      border-radius: 14px;
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .warn { color: var(--warn); }
+    code { color: var(--gold2); }
+
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; }
+      .teams { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <h1>LoL CUSTOM AUTO BALANCE</h1>
+      <div class="sub">Google Sheetsから参加者10人を取り込み、希望ロールとランクをもとにBlue / Redを自動編成します。</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="sectionTitle">
+        <h2>参加者読み込み</h2>
+        <span class="badge">MEMBERS</span>
+      </div>
+      <div class="small">
+        Apps Scriptから <code>?players=base64</code> で渡された場合は自動読み込みされます。手動テスト用にJSON貼り付けも可能です。
+      </div>
+      <textarea id="jsonInput" placeholder='例: {"match":"1戦目","players":[...]}'></textarea>
+      <div class="row mt">
+        <button class="primary" onclick="loadFromTextarea()">JSONを読み込む</button>
+        <button onclick="loadSample()">サンプル10人</button>
+        <button class="danger" onclick="clearPlayers()">クリア</button>
+      </div>
+
+      <div class="sectionTitle mt">
+        <h2>メンバー一覧</h2>
+        <span class="badge">ROSTER</span>
+      </div>
+      <div id="memberArea"></div>
+    </section>
+
+    <section class="card">
+      <div class="sectionTitle">
+        <h2>チーム分け設定</h2>
+        <span class="badge">BALANCE</span>
+      </div>
+      <div class="row">
+        <label style="flex:1">試行回数
+          <select id="samples">
+            <option value="1000">1000（高速）</option>
+            <option value="3000" selected>3000（おすすめ）</option>
+            <option value="10000">10000（高精度）</option>
+          </select>
+        </label>
+        <label style="flex:1">希望ロール重み
+          <select id="roleWeight">
+            <option value="10">低</option>
+            <option value="25" selected>標準</option>
+            <option value="50">高</option>
+          </select>
+        </label>
+      </div>
+      <div class="row mt">
+        <button class="blueBtn" onclick="shuffleTeams()">チーム分け実行</button>
+        <button onclick="copyResult()">結果をコピー</button>
+      </div>
+
+      <div class="sectionTitle mt">
+        <h2>チーム分け結果</h2>
+        <span class="badge">RESULT</span>
+      </div>
+      <div id="resultArea" class="score">まだチーム分けしていません。</div>
+    </section>
+  </main>
+
+  <script>
+    const LANES = ["TOP", "JG", "MID", "ADC", "SUP"];
+
+    const TIER_SCORE = {
+      "アイアン": 100, "Iron": 100, "IRON": 100,
+      "ブロンズ": 200, "Bronze": 200, "BRONZE": 200,
+      "シルバー": 300, "Silver": 300, "SILVER": 300,
+      "ゴールド": 400, "Gold": 400, "GOLD": 400,
+      "プラチナ": 500, "Platinum": 500, "PLATINUM": 500,
+      "エメラルド": 600, "Emerald": 600, "EMERALD": 600,
+      "ダイヤ": 700, "ダイヤモンド": 700, "Diamond": 700, "DIAMOND": 700,
+      "マスター": 800, "Master": 800, "MASTER": 800,
+      "グランドマスター": 900, "Grandmaster": 900, "GRANDMASTER": 900,
+      "チャレンジャー": 1000, "Challenger": 1000, "CHALLENGER": 1000,
+      "アンランク": 350, "アンランク un": 350, "Unranked": 350, "": 350
+    };
+
+    const DIV_SCORE = { "1": 75, "I": 75, "2": 50, "II": 50, "3": 25, "III": 25, "4": 0, "IV": 0, "": 0 };
+
+    let players = [];
+    let lastResultText = "";
+
+    function normalizeRole(role) {
+      const r = String(role || "").toUpperCase().trim();
+      if (["TOP", "上", "トップ"].includes(r)) return "TOP";
+      if (["JG", "JGL", "JUNGLE", "ジャングル", "森"].includes(r)) return "JG";
+      if (["MID", "ミッド", "中央"].includes(r)) return "MID";
+      if (["ADC", "BOT", "BOTTOM", "ボット"].includes(r)) return "ADC";
+      if (["SUP", "SUPPORT", "サポート"].includes(r)) return "SUP";
+      return r || "";
+    }
+
+    function rankScore(p) {
+      const tier = String(p.tier || "").trim();
+      const division = String(p.division || "").trim();
+      return (TIER_SCORE[tier] ?? 350) + (DIV_SCORE[division] ?? 0);
+    }
+
+    function parsePayload(obj) {
+      const list = Array.isArray(obj) ? obj : obj.players;
+      if (!Array.isArray(list)) throw new Error("players配列が見つかりません。");
+      players = list.slice(0, 10).map((p, idx) => ({
+        id: idx + 1,
+        twitchName: p.twitchName || p.name || `Player${idx + 1}`,
+        summonerName: p.summonerName || "",
+        tier: p.tier || "アンランク",
+        division: p.division || "",
+        role: normalizeRole(p.role || p.mainRole || p.preferredRole || ""),
+      }));
+      renderMembers();
+    }
+
+    function decodeUrlPayload() {
+      const params = new URLSearchParams(location.search);
+      const encoded = params.get("players");
+      if (!encoded) return;
+      try {
+        const json = decodeURIComponent(escape(atob(encoded.replace(/-/g, '+').replace(/_/g, '/'))));
+        const obj = JSON.parse(json);
+        document.getElementById("jsonInput").value = JSON.stringify(obj, null, 2);
+        parsePayload(obj);
+      } catch (e) {
+        document.getElementById("resultArea").innerHTML = `<span class="warn">URLデータの読み込みに失敗しました: ${e.message}</span>`;
+      }
+    }
+
+    function loadFromTextarea() {
+      try {
+        parsePayload(JSON.parse(document.getElementById("jsonInput").value));
+        document.getElementById("resultArea").textContent = "JSONを読み込みました。";
+      } catch (e) {
+        document.getElementById("resultArea").innerHTML = `<span class="warn">JSON読み込みエラー: ${e.message}</span>`;
+      }
+    }
+
+    function loadSample() {
+      const sample = {
+        match: "テスト",
+        players: [
+          { twitchName:"A", summonerName:"A#JP1", tier:"ゴールド", division:"4", role:"TOP" },
+          { twitchName:"B", summonerName:"B#JP1", tier:"ゴールド", division:"3", role:"JG" },
+          { twitchName:"C", summonerName:"C#JP1", tier:"プラチナ", division:"4", role:"MID" },
+          { twitchName:"D", summonerName:"D#JP1", tier:"シルバー", division:"2", role:"ADC" },
+          { twitchName:"E", summonerName:"E#JP1", tier:"エメラルド", division:"4", role:"SUP" },
+          { twitchName:"F", summonerName:"F#JP1", tier:"ゴールド", division:"2", role:"TOP" },
+          { twitchName:"G", summonerName:"G#JP1", tier:"シルバー", division:"1", role:"JG" },
+          { twitchName:"H", summonerName:"H#JP1", tier:"プラチナ", division:"3", role:"MID" },
+          { twitchName:"I", summonerName:"I#JP1", tier:"ゴールド", division:"1", role:"ADC" },
+          { twitchName:"J", summonerName:"J#JP1", tier:"シルバー", division:"4", role:"SUP" }
+        ]
+      };
+      document.getElementById("jsonInput").value = JSON.stringify(sample, null, 2);
+      parsePayload(sample);
+    }
+
+    function clearPlayers() {
+      players = [];
+      renderMembers();
+      document.getElementById("resultArea").textContent = "クリアしました。";
+    }
+
+    function renderMembers() {
+      const area = document.getElementById("memberArea");
+      if (!players.length) {
+        area.innerHTML = '<div class="score">参加者が読み込まれていません。</div>';
+        return;
+      }
+      area.innerHTML = `
+        <table>
+          <thead><tr><th>#</th><th>名前</th><th>サモナー</th><th>ランク</th><th>希望</th><th>スコア</th></tr></thead>
+          <tbody>
+            ${players.map((p, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td><input value="${escapeHtml(p.twitchName)}" onchange="players[${i}].twitchName=this.value"></td>
+                <td><input value="${escapeHtml(p.summonerName)}" onchange="players[${i}].summonerName=this.value"></td>
+                <td>${escapeHtml(p.tier)} ${escapeHtml(p.division)}</td>
+                <td>
+                  <select onchange="players[${i}].role=this.value">
+                    ${["", ...LANES].map(r => `<option value="${r}" ${p.role===r?'selected':''}>${r || '未指定'}</option>`).join("")}
+                  </select>
+                </td>
+                <td>${rankScore(p)}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`;
+    }
+
+    function assignmentCost(blue, red, roleWeight) {
+      let rolePenalty = 0;
+      let laneDiff = 0;
+      let blueTotal = 0;
+      let redTotal = 0;
+      for (let i = 0; i < LANES.length; i++) {
+        const lane = LANES[i];
+        const bp = blue[i];
+        const rp = red[i];
+        const bs = rankScore(bp);
+        const rs = rankScore(rp);
+        blueTotal += bs;
+        redTotal += rs;
+        laneDiff += Math.abs(bs - rs);
+        if (bp.role && bp.role !== lane) rolePenalty += roleWeight;
+        if (rp.role && rp.role !== lane) rolePenalty += roleWeight;
+      }
+      const teamDiff = Math.abs(blueTotal - redTotal) * 0.4;
+      return laneDiff + teamDiff + rolePenalty;
+    }
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function shuffleTeams() {
+      if (players.length !== 10) {
+        document.getElementById("resultArea").innerHTML = `<span class="warn">10人ちょうど読み込んでください。現在: ${players.length}人</span>`;
+        return;
+      }
+      const samples = Number(document.getElementById("samples").value);
+      const roleWeight = Number(document.getElementById("roleWeight").value);
+
+      let best = null;
+      let bestCost = Infinity;
+
+      for (let s = 0; s < samples; s++) {
+        const shuffled = shuffleArray(players);
+        const blue = shuffled.slice(0, 5);
+        const red = shuffled.slice(5, 10);
+        const cost = assignmentCost(blue, red, roleWeight);
+        if (cost < bestCost) {
+          bestCost = cost;
+          best = { blue, red };
+        }
+      }
+      renderResult(best.blue, best.red, bestCost);
+    }
+
+    function renderResult(blue, red, cost) {
+      const blueTotal = blue.reduce((a,p)=>a+rankScore(p),0);
+      const redTotal = red.reduce((a,p)=>a+rankScore(p),0);
+      lastResultText = `Blue Team\n${LANES.map((lane,i)=>`${lane}: ${blue[i].twitchName} (${blue[i].tier}${blue[i].division})`).join('\n')}\n\nRed Team\n${LANES.map((lane,i)=>`${lane}: ${red[i].twitchName} (${red[i].tier}${red[i].division})`).join('\n')}\n\nCost: ${Math.round(cost)} / Blue ${blueTotal} - Red ${redTotal}`;
+
+      document.getElementById("resultArea").innerHTML = `
+        <div class="teams">
+          <div class="teamBox teamBlue">
+            <div class="teamTitle">🔵 Blue Team 合計:${blueTotal}</div>
+            ${LANES.map((lane,i)=>teamLine(lane, blue[i], red[i])).join("")}
+          </div>
+          <div class="teamBox teamRed">
+            <div class="teamTitle">🔴 Red Team 合計:${redTotal}</div>
+            ${LANES.map((lane,i)=>teamLine(lane, red[i], blue[i])).join("")}
+          </div>
+        </div>
+        <div class="score mt">
+          評価スコア: ${Math.round(cost)}<br>
+          チーム合計差: ${Math.abs(blueTotal - redTotal)}<br>
+          対面差と希望ロール外ペナルティが小さいほど良い結果です。
+        </div>`;
+    }
+
+    function teamLine(lane, p, opponent) {
+      return `<div class="laneLine">
+        <div class="lane">${lane}</div>
+        <div>${escapeHtml(p.twitchName)} <span class="small">${escapeHtml(p.tier)}${escapeHtml(p.division)} / 希望:${p.role || '未指定'}</span></div>
+        <div class="small">対面差 ${Math.abs(rankScore(p) - rankScore(opponent))}</div>
+      </div>`;
+    }
+
+    function copyResult() {
+      if (!lastResultText) return alert("先にチーム分けを実行してください。");
+      navigator.clipboard.writeText(lastResultText);
+      alert("結果をコピーしました。Discord等に貼り付けできます。");
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;");
+    }
+
+    decodeUrlPayload();
+    renderMembers();
+  </script>
+</body>
+</html>
