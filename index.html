@@ -371,11 +371,24 @@
     function normalizeRole(role) {
       const r = String(role || "").toUpperCase().trim();
       if (["TOP", "上", "トップ"].includes(r)) return "TOP";
-      if (["JG", "JGL", "JUNGLE", "ジャングル", "森"].includes(r)) return "JG";
+      if (["JG", "JUG", "JGL", "JUNGLE", "ジャングル", "森"].includes(r)) return "JG";
       if (["MID", "ミッド", "中央"].includes(r)) return "MID";
       if (["ADC", "BOT", "BOTTOM", "ボット"].includes(r)) return "ADC";
       if (["SUP", "SUPPORT", "サポート"].includes(r)) return "SUP";
       return r || "";
+    }
+
+    function normalizeRoles(value) {
+      if (Array.isArray(value)) return value.map(normalizeRole).filter(Boolean);
+      return String(value || "")
+        .split(/[ ,、/]+/)
+        .map(normalizeRole)
+        .filter(Boolean);
+    }
+
+    function formatRoles(p) {
+      const roles = p.preferredRoles || (p.role ? [p.role] : []);
+      return roles.length ? roles.join(",") : "未指定";
     }
 
     function rankScore(p) {
@@ -387,38 +400,38 @@
     function parsePayload(obj) {
       const list = Array.isArray(obj) ? obj : obj.players;
       if (!Array.isArray(list)) throw new Error("players配列が見つかりません。");
-      players = list.slice(0, 10).map((p, idx) => ({
-        id: idx + 1,
-        twitchName: p.twitchName || p.name || `Player${idx + 1}`,
-        summonerName: p.summonerName || "",
-        tier: p.tier || "アンランク",
-        division: p.division || "",
-        role: normalizeRole(p.role || p.mainRole || p.preferredRole || ""),
-      }));
+      players = list.slice(0, 10).map((p, idx) => {
+        const preferredRoles = normalizeRoles(p.roles || p.role || p.mainRole || p.preferredRole || "");
+        return {
+          id: idx + 1,
+          twitchName: p.twitchName || p.name || `Player${idx + 1}`,
+          summonerName: p.summonerName || "",
+          tier: p.tier || "アンランク",
+          division: p.division || "",
+          role: preferredRoles[0] || "",
+          preferredRoles: preferredRoles
+        };
+      });
       renderMembers();
     }
 
     function decodeUrlPayload() {
-  const params = new URLSearchParams(location.search);
-  const encoded = params.get("players");
-  if (!encoded) return;
-
-  try {
-    let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-
-    const binary = atob(base64);
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-    const json = new TextDecoder("utf-8").decode(bytes);
-
-    const obj = JSON.parse(json);
-    document.getElementById("jsonInput").value = JSON.stringify(obj, null, 2);
-    parsePayload(obj);
-  } catch (e) {
-    document.getElementById("resultArea").innerHTML =
-      `<span class="warn">URLデータの読み込みに失敗しました: ${e.message}</span>`;
-  }
-}
+      const params = new URLSearchParams(location.search);
+      const encoded = params.get("players");
+      if (!encoded) return;
+      try {
+        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) base64 += '=';
+        const binary = atob(base64);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        const json = new TextDecoder("utf-8").decode(bytes);
+        const obj = JSON.parse(json);
+        document.getElementById("jsonInput").value = JSON.stringify(obj, null, 2);
+        parsePayload(obj);
+      } catch (e) {
+        document.getElementById("resultArea").innerHTML = `<span class="warn">URLデータの読み込みに失敗しました: ${e.message}</span>`;
+      }
+    }
 
     function loadFromTextarea() {
       try {
@@ -472,9 +485,10 @@
                 <td><input value="${escapeHtml(p.summonerName)}" onchange="players[${i}].summonerName=this.value"></td>
                 <td>${escapeHtml(p.tier)} ${escapeHtml(p.division)}</td>
                 <td>
-                  <select onchange="players[${i}].role=this.value">
-                    ${["", ...LANES].map(r => `<option value="${r}" ${p.role===r?'selected':''}>${r || '未指定'}</option>`).join("")}
+                  <select onchange="players[${i}].preferredRoles=this.value ? [this.value] : []">
+                    ${["", ...LANES].map(r => `<option value="${r}" ${r && (p.preferredRoles || []).includes(r) ? 'selected' : ''}>${r || '未指定'}</option>`).join("")}
                   </select>
+                  <div class="small">希望: ${escapeHtml(formatRoles(p))}</div>
                 </td>
                 <td>${rankScore(p)}</td>
               </tr>`).join("")}
@@ -496,8 +510,10 @@
         blueTotal += bs;
         redTotal += rs;
         laneDiff += Math.abs(bs - rs);
-        if (bp.role && bp.role !== lane) rolePenalty += roleWeight;
-        if (rp.role && rp.role !== lane) rolePenalty += roleWeight;
+        const bRoles = bp.preferredRoles || (bp.role ? [bp.role] : []);
+        const rRoles = rp.preferredRoles || (rp.role ? [rp.role] : []);
+        if (bRoles.length && !bRoles.includes(lane)) rolePenalty += roleWeight;
+        if (rRoles.length && !rRoles.includes(lane)) rolePenalty += roleWeight;
       }
       const teamDiff = Math.abs(blueTotal - redTotal) * 0.4;
       return laneDiff + teamDiff + rolePenalty;
@@ -562,7 +578,7 @@
     function teamLine(lane, p, opponent) {
       return `<div class="laneLine">
         <div class="lane">${lane}</div>
-        <div>${escapeHtml(p.twitchName)} <span class="small">${escapeHtml(p.tier)}${escapeHtml(p.division)} / 希望:${p.role || '未指定'}</span></div>
+        <div>${escapeHtml(p.twitchName)} <span class="small">${escapeHtml(p.tier)}${escapeHtml(p.division)} / 希望:${escapeHtml(formatRoles(p))}</span></div>
         <div class="small">対面差 ${Math.abs(rankScore(p) - rankScore(opponent))}</div>
       </div>`;
     }
