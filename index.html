@@ -391,12 +391,47 @@
       return roles.length ? roles.join(",") : "未指定";
     }
 
-    function rankScore(p) {
-      const tier = String(p.tier || "").trim();
-      const division = String(p.division || "").trim();
-      return (TIER_SCORE[tier] ?? 350) + (DIV_SCORE[division] ?? 0);
-    }
+function rankScore(p) {
 
+  const tierMap = {
+    "IRON": 0,
+    "BRONZE": 100,
+    "SILVER": 200,
+    "GOLD": 300,
+    "PLATINUM": 400,
+    "EMERALD": 500,
+    "DIAMOND": 600,
+    "MASTER": 700,
+    "GRANDMASTER": 800,
+    "CHALLENGER": 900,
+
+    // 日本語
+    "アイアン": 0,
+    "ブロンズ": 100,
+    "シルバー": 200,
+    "ゴールド": 300,
+    "プラチナ": 400,
+    "エメラルド": 500,
+    "ダイヤ": 600,
+    "マスター": 700,
+    "グランドマスター": 800,
+    "チャレンジャー": 900,
+
+    "アンランク": 150
+  };
+
+  const tier = String(p.tier || "").trim();
+  const division = parseInt(p.division || "4", 10);
+
+  const base = tierMap[tier] ?? 150;
+
+  const divScore =
+    isNaN(division)
+      ? 0
+      : (5 - division) * 25;
+
+  return base + divScore;
+}
     function parsePayload(obj) {
       const list = Array.isArray(obj) ? obj : obj.players;
       if (!Array.isArray(list)) throw new Error("players配列が見つかりません。");
